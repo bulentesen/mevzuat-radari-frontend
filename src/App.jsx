@@ -1,19 +1,28 @@
 import { useEffect, useState } from "react";
+import Onboarding from "./Onboarding.jsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 export default function App() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [q, setQ] = useState("");
 
   async function load() {
     setLoading(true);
+    setErr("");
     try {
-      const res = await fetch(`${API_BASE}/mevzuatlar`);
+      const url = q
+        ? `${API_BASE}/feed?q=${encodeURIComponent(q)}`
+        : `${API_BASE}/mevzuatlar`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setItems(data);
+      setItems(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error("API Hatası:", e);
+      setErr("Veri yüklenemedi. Birazdan tekrar deneyin.");
       setItems([]);
     } finally {
       setLoading(false);
@@ -22,6 +31,7 @@ export default function App() {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -31,32 +41,67 @@ export default function App() {
         <p className="text-gray-600">Sektöre göre filtrelenmiş son mevzuatlar.</p>
       </header>
 
-      <main className="max-w-4xl mx-auto bg-white rounded-2xl shadow p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-semibold">Akış</h2>
-          <button onClick={load} className="px-3 py-1 rounded bg-blue-600 text-white">
-            Yenile
-          </button>
-        </div>
+      <main className="max-w-4xl mx-auto space-y-6">
+        {/* Onboarding (MVP) */}
+        <section className="bg-white rounded-2xl shadow p-4">
+          <Onboarding />
+        </section>
 
-        {loading && <div>Yükleniyor…</div>}
+        {/* Akış */}
+        <section className="bg-white rounded-2xl shadow p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xl font-semibold">Akış</h2>
+            <button
+              onClick={load}
+              className="px-3 py-1 rounded bg-blue-600 text-white"
+            >
+              Yenile
+            </button>
+          </div>
 
-        <ul>
-          {items.map((m) => (
-            <li key={m.id} className="border-b py-3">
-              <div className="font-medium">📜 {m.baslik}</div>
-              <div className="text-sm text-gray-600">{m.ozet}</div>
-              {m.kaynak && (
-                <a className="text-blue-600 text-sm" href={m.kaynak} target="_blank" rel="noreferrer">
-                  Orijinal Kaynak
-                </a>
-              )}
-            </li>
-          ))}
-          {items.length === 0 && !loading && (
-            <li className="text-gray-500">Gösterilecek kayıt yok (şimdilik mock veri bekleniyor).</li>
-          )}
-        </ul>
+          {/* Arama / Filtre */}
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Ara: KDV, KVKK, e-fatura..."
+              className="flex-1 border rounded p-2"
+            />
+            <button
+              onClick={load}
+              className="px-3 py-2 rounded bg-blue-600 text-white"
+            >
+              Ara
+            </button>
+          </div>
+
+          {loading && <div>Yükleniyor… (backend uyanıyor olabilir)</div>}
+          {err && <div className="text-red-600 text-sm mb-2">{err}</div>}
+
+          <ul>
+            {items.map((m) => (
+              <li key={m.id} className="border-b py-3">
+                <div className="font-medium">📜 {m.baslik}</div>
+                <div className="text-sm text-gray-600">{m.ozet}</div>
+                {m.kaynak && (
+                  <a
+                    className="text-blue-600 text-sm"
+                    href={m.kaynak}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Orijinal Kaynak
+                  </a>
+                )}
+              </li>
+            ))}
+            {items.length === 0 && !loading && !err && (
+              <li className="text-gray-500">
+                Gösterilecek kayıt yok.
+              </li>
+            )}
+          </ul>
+        </section>
       </main>
     </div>
   );
