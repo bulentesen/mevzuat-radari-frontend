@@ -37,7 +37,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <header className="max-w-4xl mx-auto mb-6">
-        <h1 className="text-3xl font-bold text-blue-700">Mevzuat Radarı</h1>
+        <h1 className="text-3xl font-bold text-blue-700">Mevzuat Radarı • v0.2</h1>
         <p className="text-gray-600">Sektöre göre filtrelenmiş son mevzuatlar.</p>
       </header>
 
