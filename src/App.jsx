@@ -29,6 +29,42 @@ export default function App() {
     }
   }
 
+  async function loadPersonal() {
+  const email = localStorage.getItem("mr_email");
+  if (!email) {
+    alert("Önce Onboarding'de e-posta girin.");
+    return;
+  }
+  setLoading(true);
+  setErr("");
+  try {
+    const res = await fetch(`${API_BASE}/feed/personal?email=${encodeURIComponent(email)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    setItems(Array.isArray(data) ? data : []);
+  } catch (e) {
+    console.error(e);
+    setErr("Kişisel akış yüklenemedi.");
+    setItems([]);
+  } finally {
+    setLoading(false);
+  }
+}
+
+<div className="flex items-center justify-between mb-3">
+  <h2 className="text-xl font-semibold">Akış</h2>
+  <div className="flex gap-2">
+    <button onClick={load} className="px-3 py-1 rounded bg-blue-600 text-white">
+      Yenile
+    </button>
+    <button onClick={loadPersonal} className="px-3 py-1 rounded bg-emerald-600 text-white">
+      Kişisel Akış
+    </button>
+  </div>
+</div>
+
+
+
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps

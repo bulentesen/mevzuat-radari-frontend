@@ -23,6 +23,7 @@ export default function Onboarding() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setMsg("E-posta kaydedildi.");
       setStep(2);
+      localStorage.setItem("mr_email", email);
     } catch (e) {
       console.error(e);
       setErr("E-posta kaydı başarısız. Adresi kontrol edin.");
