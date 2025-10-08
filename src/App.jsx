@@ -29,41 +29,30 @@ export default function App() {
     }
   }
 
+  // Kişisel Akış: localStorage'daki e-posta ile backend /feed/personal çağrısı
   async function loadPersonal() {
-  const email = localStorage.getItem("mr_email");
-  if (!email) {
-    alert("Önce Onboarding'de e-posta girin.");
-    return;
+    const email = localStorage.getItem("mr_email");
+    if (!email) {
+      alert("Önce Onboarding'de e-posta girin.");
+      return;
+    }
+    setLoading(true);
+    setErr("");
+    try {
+      const res = await fetch(
+        `${API_BASE}/feed/personal?email=${encodeURIComponent(email)}`
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setItems(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("API Hatası (personal):", e);
+      setErr("Kişisel akış yüklenemedi.");
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   }
-  setLoading(true);
-  setErr("");
-  try {
-    const res = await fetch(`${API_BASE}/feed/personal?email=${encodeURIComponent(email)}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    setItems(Array.isArray(data) ? data : []);
-  } catch (e) {
-    console.error(e);
-    setErr("Kişisel akış yüklenemedi.");
-    setItems([]);
-  } finally {
-    setLoading(false);
-  }
-}
-
-<div className="flex items-center justify-between mb-3">
-  <h2 className="text-xl font-semibold">Akış</h2>
-  <div className="flex gap-2">
-    <button onClick={load} className="px-3 py-1 rounded bg-blue-600 text-white">
-      Yenile
-    </button>
-    <button onClick={loadPersonal} className="px-3 py-1 rounded bg-emerald-600 text-white">
-      Kişisel Akış
-    </button>
-  </div>
-</div>
-
-
 
   useEffect(() => {
     load();
@@ -78,7 +67,7 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl mx-auto space-y-6">
-        {/* Onboarding (MVP) */}
+        {/* Onboarding */}
         <section className="bg-white rounded-2xl shadow p-4">
           <Onboarding />
         </section>
@@ -87,15 +76,23 @@ export default function App() {
         <section className="bg-white rounded-2xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-semibold">Akış</h2>
-            <button
-              onClick={load}
-              className="px-3 py-1 rounded bg-blue-600 text-white"
-            >
-              Yenile
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={load}
+                className="px-3 py-1 rounded bg-blue-600 text-white"
+              >
+                Yenile
+              </button>
+              <button
+                onClick={loadPersonal}
+                className="px-3 py-1 rounded bg-emerald-600 text-white"
+              >
+                Kişisel Akış
+              </button>
+            </div>
           </div>
 
-          {/* Arama / Filtre */}
+          {/* Arama */}
           <div className="flex items-center gap-2 mb-4">
             <input
               value={q}
@@ -132,9 +129,7 @@ export default function App() {
               </li>
             ))}
             {items.length === 0 && !loading && !err && (
-              <li className="text-gray-500">
-                Gösterilecek kayıt yok.
-              </li>
+              <li className="text-gray-500">Gösterilecek kayıt yok.</li>
             )}
           </ul>
         </section>
