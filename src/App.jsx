@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import Onboarding from "./Onboarding.jsx";
+import AdminForm from "./AdminForm.jsx";
+import { SECTORS } from "./constants";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
@@ -8,15 +10,16 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [q, setQ] = useState("");
+  const [sector, setSector] = useState("");
 
   async function load() {
     setLoading(true);
     setErr("");
     try {
-      const url = q
-        ? `${API_BASE}/feed?q=${encodeURIComponent(q)}`
-        : `${API_BASE}/mevzuatlar`;
-      const res = await fetch(url);
+      const urlObj = new URL(`${API_BASE}/feed`);
+      if (q) urlObj.searchParams.set("q", q);
+      if (sector) urlObj.searchParams.set("sector", sector);
+      const res = await fetch(urlObj.toString());
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setItems(Array.isArray(data) ? data : []);
@@ -29,7 +32,6 @@ export default function App() {
     }
   }
 
-  // Kişisel Akış: localStorage'daki e-posta ile backend /feed/personal çağrısı
   async function loadPersonal() {
     const email = localStorage.getItem("mr_email");
     if (!email) {
@@ -72,6 +74,11 @@ export default function App() {
           <Onboarding />
         </section>
 
+        {/* Admin: Mevzuat Ekle (MVP) */}
+        <section>
+          <AdminForm onCreated={() => load()} />
+        </section>
+
         {/* Akış */}
         <section className="bg-white rounded-2xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
@@ -92,7 +99,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Arama */}
+          {/* Arama + Sektör filtresi */}
           <div className="flex items-center gap-2 mb-4">
             <input
               value={q}
@@ -100,6 +107,18 @@ export default function App() {
               placeholder="Ara: KDV, KVKK, e-fatura..."
               className="flex-1 border rounded p-2"
             />
+            <select
+              value={sector}
+              onChange={(e) => setSector(e.target.value)}
+              className="border rounded p-2"
+            >
+              <option value="">Sektör (hepsi)</option>
+              {SECTORS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
             <button
               onClick={load}
               className="px-3 py-2 rounded bg-blue-600 text-white"
@@ -116,6 +135,11 @@ export default function App() {
               <li key={m.id} className="border-b py-3">
                 <div className="font-medium">📜 {m.baslik}</div>
                 <div className="text-sm text-gray-600">{m.ozet}</div>
+                {Array.isArray(m.sectors) && m.sectors.length > 0 && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Sektörler: {m.sectors.join(", ")}
+                  </div>
+                )}
                 {m.kaynak && (
                   <a
                     className="text-blue-600 text-sm"
